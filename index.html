@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Appeal System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            margin: 1rem;
+        }
+        
+        h1 {
+            margin-bottom: 1.5rem;
+            font-size: 2rem;
+        }
+        
+        p {
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+        
+        .button {
+            display: inline-block;
+            background: #25D366;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-top: 1rem;
+            transition: transform 0.2s, background 0.2s;
+        }
+        
+        .button:hover {
+            transform: translateY(-2px);
+            background: #1da851;
+        }
+        
+        .error {
+            background: rgba(255, 0, 0, 0.2);
+            border: 1px solid rgba(255, 0, 0, 0.3);
+            padding: 1rem;
+            border-radius: 10px;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>WhatsApp Appeal System</h1>
+        <div id="content"></div>
+    </div>
+
+    <script>
+        // Appeal templates - easy to add more
+        const appeals = {
+            unban: [
+                {
+                    subject: "Unban Appeal - Account Suspension Review Request",
+                    body: `Dear WhatsApp Support Team,
+
+I'm writing to appeal the suspension of my WhatsApp account associated with phone number ${window.number || '+XXXXXXXXXXXX'}.
+
+I believe this suspension may have been applied due to:
+1. Possible misunderstanding of my account activity
+2. Automated system flagging
+3. User report misunderstanding
+
+I confirm that I have read and will adhere to WhatsApp's Terms of Service. Please review my account and consider reinstating access.
+
+Thank you for your attention to this matter.
+
+Best regards`
+                },
+                {
+                    subject: "Account Restoration Request - False Positive Detection",
+                    body: `To WhatsApp Support,
+
+My WhatsApp account (${window.number || '+XXXXXXXXXXXX'}) has been unexpectedly banned. I suspect this might be a false positive detection by your automated systems.
+
+Account details:
+- Phone Number: ${window.number || '+XXXXXXXXXXXX'}
+- Issue: Sudden account suspension
+- Status: Unable to access WhatsApp services
+
+I assure you that I use WhatsApp only for personal communication and have not violated any terms. Please investigate and restore my account access.
+
+Sincerely`
+                },
+                {
+                    subject: "Urgent: WhatsApp Account Ban Appeal",
+                    body: `Hello WhatsApp Team,
+
+I'm urgently appealing the ban on my WhatsApp account (${window.number || '+XXXXXXXXXXXX'}). This account is crucial for my personal and professional communications.
+
+Possible reasons for incorrect flagging:
+- Recently changed devices
+- Travel to different location
+- Network issues triggering security protocols
+
+I respectfully request a manual review of my account activity and the ban decision. I'm committed to following all WhatsApp guidelines.
+
+Respectfully yours`
+                }
+            ],
+            ban: [
+                {
+                    subject: "Content Violation Appeal - Request for Review",
+                    body: `Dear WhatsApp Reports Team,
+
+Regarding report for account ${window.number || '+XXXXXXXXXXXX'}:
+
+I acknowledge receiving notification about content violations. I would like to request a review as I believe:
+
+1. The content may have been misinterpreted
+2. Context may not have been fully considered
+3. The report might be based on incomplete information
+
+I take community guidelines seriously and am willing to adjust my usage accordingly. Please provide specific feedback so I can avoid future issues.
+
+Thank you for your consideration.`
+                },
+                {
+                    subject: "Report Dispute - Content Moderation Review",
+                    body: `To WhatsApp Reports Department,
+
+I'm writing to dispute the recent report against account ${window.number || '+XXXXXXXXXXXX'}.
+
+Key points for consideration:
+- The reported content was likely taken out of context
+- No malicious intent was involved
+- I'm open to content removal if deemed inappropriate
+
+Please review the reported content with full context and reconsider the action taken against my account. I value the WhatsApp community and want to resolve this appropriately.
+
+Best regards`
+                },
+                {
+                    subject: "Appeal Against WhatsApp Content Report",
+                    body: `Hello WhatsApp Support,
+
+I'm appealing the report that led to action against my account (${window.number || '+XXXXXXXXXXXX'}).
+
+For your review:
+- The reported content was part of private conversation
+- It complied with general communication standards
+- No terms were intentionally violated
+
+I understand the importance of content moderation and would appreciate if you could review this case with the full context in mind. I'm happy to provide additional information if needed.
+
+Sincerely`
+                }
+            ]
+        };
+
+        // Process URL parameters
+        function processURLParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = parseInt(urlParams.get('code') || '0');
+            const number = urlParams.get('number') || '';
+            
+            window.number = number; // Store globally
+            
+            let appealType, appealIndex, appealData;
+            
+            // Determine appeal type based on code
+            if (code >= 1 && code <= 3) {
+                appealType = 'unban';
+                appealIndex = code - 1;
+            } else if (code >= 4 && code <= 6) {
+                appealType = 'ban';
+                appealIndex = code - 4;
+            }
+            
+            // Validate parameters
+            if (!code || !number || !appealType) {
+                showError("Missing or invalid parameters. Required: ?number=PHONE&code=1-6");
+                return null;
+            }
+            
+            if (appealIndex >= appeals[appealType].length) {
+                appealIndex = 0; // Fallback to first appeal
+            }
+            
+            appealData = appeals[appealType][appealIndex];
+            
+            return {
+                type: appealType,
+                index: appealIndex + 1,
+                number: number,
+                code: code,
+                subject: appealData.subject,
+                body: appealData.body
+            };
+        }
+
+        // Generate mailto link
+        function generateMailto(appealInfo) {
+            const recipient = appealInfo.type === 'unban' 
+                ? 'support@whatsapp.com' 
+                : 'reports@whatsapp.com';
+            
+            const subject = encodeURIComponent(appealInfo.subject);
+            const body = encodeURIComponent(appealInfo.body);
+            
+            return `mailto:${recipient}?subject=${subject}&body=${body}`;
+        }
+
+        // Display error
+        function showError(message) {
+            const contentDiv = document.getElementById('content');
+            contentDiv.innerHTML = `
+                <div class="error">
+                    <p>${message}</p>
+                    <p>Example URL: ?number=+1234567890&code=3</p>
+                    <p>Code 1-3: Unban appeals | Code 4-6: Ban appeals</p>
+                </div>
+            `;
+        }
+
+        // Display success and auto-redirect
+        function showSuccess(appealInfo, mailtoLink) {
+            const contentDiv = document.getElementById('content');
+            const typeLabel = appealInfo.type === 'unban' ? 'Unban' : 'Ban';
+            
+            contentDiv.innerHTML = `
+                <p><strong>Appeal Type:</strong> ${typeLabel} Appeal #${appealInfo.index}</p>
+                <p><strong>Phone Number:</strong> ${appealInfo.number}</p>
+                <p><strong>Appeal Code:</strong> ${appealInfo.code}</p>
+                <p><strong>Support Email:</strong> ${appealInfo.type === 'unban' ? 'support@whatsapp.com' : 'reports@whatsapp.com'}</p>
+                <p>Your appeal is ready to send. Click the button below to open your email client:</p>
+                <a href="${mailtoLink}" class="button" id="sendEmail">
+                    Open Email with Appeal
+                </a>
+                <p style="margin-top: 1rem; font-size: 0.9em; opacity: 0.8;">
+                    Auto-opening in 3 seconds...
+                </p>
+            `;
+            
+            // Auto-open mail client after 3 seconds
+            setTimeout(() => {
+                window.location.href = mailtoLink;
+            }, 3000);
+        }
+
+        // Main execution
+        document.addEventListener('DOMContentLoaded', function() {
+            const appealInfo = processURLParams();
+            
+            if (appealInfo) {
+                const mailtoLink = generateMailto(appealInfo);
+                showSuccess(appealInfo, mailtoLink);
+                
+                // Optional: Auto-focus on the button for accessibility
+                setTimeout(() => {
+                    const button = document.getElementById('sendEmail');
+                    if (button) button.focus();
+                }, 100);
+            }
+        });
+
+        // Handle manual button click if auto-open fails
+        document.addEventListener('click', function(e) {
+            if (e.target.id === 'sendEmail') {
+                e.preventDefault();
+                const button = e.target;
+                const originalText = button.textContent;
+                
+                button.textContent = 'Opening Email...';
+                button.style.opacity = '0.7';
+                
+                setTimeout(() => {
+                    window.location.href = button.href;
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.style.opacity = '1';
+                    }, 2000);
+                }, 500);
+            }
+        });
+    </script>
+</body>
+</html>
